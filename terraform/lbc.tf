@@ -57,7 +57,8 @@ resource "helm_release" "lbc" {
   ]
 
   # El controller debe arrancar con las credenciales ya disponibles
-  depends_on = [
+    depends_on = [
+    module.eks,
     aws_eks_pod_identity_association.lbc,
     aws_iam_role_policy_attachment.lbc,
   ]
