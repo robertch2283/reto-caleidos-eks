@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-acme
+  namespace: acme-tx
+  labels:
+    app: nginx-acme
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx-acme
+  template:
+    metadata:
+      labels:
+        app: nginx-acme
+    spec:
+      # Alta disponibilidad: repartir los pods entre zonas y entre nodos
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: nginx-acme
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: nginx-acme
+
+      # 1) Init container: genera la pagina con los datos de ESTE pod
+      initContainers:
+        - name: generar-pagina
+          image: busybox:1.37
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          command: ["sh", "-c"]
+          args:
+            - |
+              cat > /html/index.html <<EOF
+              <!DOCTYPE html>
+              <html><head><meta charset="utf-8">
+              <meta http-equiv="refresh" content="2">
+              <title>ACME Transacciones</title>
+              <style>
+                body{font-family:sans-serif;background:#0f172a;color:#e2e8f0;text-align:center;padding-top:60px}
+                .pod{font-size:2.2em;color:#38bdf8;font-weight:bold}
+                .info{color:#94a3b8}
+              </style></head>
+              <body>
+                <h1>ACME - Plataforma de Transacciones</h1>
+                <p>Esta peticion fue respondida por el pod:</p>
+                <p class="pod">${POD_NAME}</p>
+                <p class="info">IP del pod: ${POD_IP}</p>
+                <p class="info">Nodo: ${NODE_NAME}</p>
+                <p class="info">(la pagina se recarga cada 2 segundos)</p>
+              </body></html>
+              EOF
+              echo "pod=${POD_NAME} ip=${POD_IP} nodo=${NODE_NAME}" > /html/pod.txt
+          volumeMounts:
+            - name: html
+              mountPath: /html
+
+      # 2) Contenedor principal: nginx sirve la pagina generada
+      containers:
+        - name: nginx
+          image: nginx:1.28-alpine
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
+
+      volumes:
+        - name: html
+          emptyDir: {}

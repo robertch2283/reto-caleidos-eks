@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-acme
+  namespace: acme-tx
+  annotations:
+    # ALB publico, en las subnets etiquetadas con kubernetes.io/role/elb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    # El ALB envia el trafico directo a la IP de cada pod
+    alb.ingress.kubernetes.io/target-type: ip
+    # Escucha en 80 y 443; todo lo que llega por 80 se redirige a 443
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    # Certificado importado en ACM (lo crea Terraform)
+    alb.ingress.kubernetes.io/certificate-arn: __CERT_ARN__
+    # Solo TLS 1.2 y 1.3
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+    # Usar NUESTRO Security Group del ALB (tier publico, creado con Terraform)
+    alb.ingress.kubernetes.io/security-groups: __ALB_SG__
+    alb.ingress.kubernetes.io/manage-backend-security-group-rules: "false"
+    # Health check del Target Group
+    alb.ingress.kubernetes.io/healthcheck-path: /
+    alb.ingress.kubernetes.io/tags: Project=acme-tx,ManagedBy=aws-load-balancer-controller
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx-acme
+                port:
+                  number: 80
