@@ -35,3 +35,27 @@ resource "aws_vpc_security_group_ingress_rule" "alb_http" {
   to_port           = 80
   ip_protocol       = "tcp"
 }
+
+# ============================================================
+# Conexión TIER PÚBLICO → TIER APLICACIÓN
+# ============================================================
+
+# El ALB solo puede SALIR hacia los nodos, por el puerto de la app
+resource "aws_vpc_security_group_egress_rule" "alb_to_nodes" {
+  security_group_id            = aws_security_group.alb.id
+  description                  = "ALB hacia pods nginx"
+  referenced_security_group_id = module.eks.node_security_group_id
+  from_port                    = 80
+  to_port                      = 80
+  ip_protocol                  = "tcp"
+}
+
+# Los nodos solo ACEPTAN tráfico de la app si viene del ALB
+resource "aws_vpc_security_group_ingress_rule" "nodes_from_alb" {
+  security_group_id            = module.eks.node_security_group_id
+  description                  = "Pods nginx solo desde el ALB"
+  referenced_security_group_id = aws_security_group.alb.id
+  from_port                    = 80
+  to_port                      = 80
+  ip_protocol                  = "tcp"
+}

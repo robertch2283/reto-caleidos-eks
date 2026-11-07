@@ -19,3 +19,20 @@ output "alb_security_group_id" {
   description = "Se usará en el manifiesto Ingress (Fase 5)" ##eliminar FASE5
   value       = aws_security_group.alb.id
 }
+
+output "cluster_name" {
+  value = module.eks.cluster_name
+}
+
+output "cluster_endpoint" {
+  value = module.eks.cluster_endpoint
+}
+
+output "node_security_group_id" {
+  value = module.eks.node_security_group_id
+}
+
+output "configure_kubectl" {
+  description = "Comando para conectar kubectl al cluster"
+  value       = "aws eks update-kubeconfig --region ${var.region} --name ${module.eks.cluster_name}"
+}

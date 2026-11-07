@@ -44,3 +44,36 @@ variable "allowed_ingress_cidrs" {
   type        = list(string)
   default     = ["0.0.0.0/0"]
 }
+
+# ---------------- EKS ----------------
+variable "kubernetes_version" {
+  description = "Versión de Kubernetes (en soporte estándar para evitar el costo de soporte extendido)"
+  type        = string
+  default     = "1.35"
+}
+
+variable "cluster_endpoint_public_access_cidrs" {
+  description = "IPs que pueden usar kubectl contra el API del cluster"
+  type        = list(string)
+}
+
+variable "node_instance_types" {
+description = "Tipo de instancia de los nodos (debe ser Free Tier eligible en el plan gratuito)"
+  type        = list(string)
+  default     = ["c7i-flex.large"]
+}
+
+variable "node_min_size" {
+  type    = number
+  default = 2
+}
+
+variable "node_desired_size" {
+  type    = number
+  default = 2
+}
+
+variable "node_max_size" {
+  type    = number
+  default = 4
+}
