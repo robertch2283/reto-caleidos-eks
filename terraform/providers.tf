@@ -25,3 +25,20 @@ locals {
   # Toma las primeras N zonas, ej: ["us-east-2a", "us-east-2b"]
   azs = slice(data.aws_availability_zones.available.names, 0, var.az_count)
 }
+
+provider "helm" {
+  # Configuracion de Helm aislada del proyecto (no usa la del PC)
+  repository_config_path = "${path.module}/.helm/repositories.yaml"
+  repository_cache       = "${path.module}/.helm/cache"
+
+  kubernetes = {
+    host                   = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+
+    exec = {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "aws"
+      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--region", var.region]
+    }
+  }
+}

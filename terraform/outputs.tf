@@ -36,3 +36,12 @@ output "configure_kubectl" {
   description = "Comando para conectar kubectl al cluster"
   value       = "aws eks update-kubeconfig --region ${var.region} --name ${module.eks.cluster_name}"
 }
+
+output "acm_certificate_arn" {
+  description = "Se usara en el Ingress (Fase 5)"
+  value       = aws_acm_certificate.app.arn
+}
+
+output "lbc_role_arn" {
+  value = aws_iam_role.lbc.arn
+}

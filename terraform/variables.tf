@@ -58,7 +58,7 @@ variable "cluster_endpoint_public_access_cidrs" {
 }
 
 variable "node_instance_types" {
-description = "Tipo de instancia de los nodos (debe ser Free Tier eligible en el plan gratuito)"
+  description = "Tipo de instancia de los nodos (debe ser Free Tier eligible en el plan gratuito)"
   type        = list(string)
   default     = ["c7i-flex.large"]
 }
@@ -76,4 +76,18 @@ variable "node_desired_size" {
 variable "node_max_size" {
   type    = number
   default = 4
+}
+
+# ---------------- Load Balancer Controller ----------------
+variable "lbc_chart_version" {
+  description = "Version del chart del AWS Load Balancer Controller (debe coincidir con la politica IAM descargada)"
+  type        = string
+  default     = "3.6.2"
+}
+
+# ---------------- TLS ----------------
+variable "app_domain" {
+  description = "Nombre DNS del certificado autofirmado"
+  type        = string
+  default     = "app.acme.local"
 }
